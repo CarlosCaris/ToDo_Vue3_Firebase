@@ -70,43 +70,29 @@ class="card mb-5"
   imports
 */
   import { ref, onMounted } from 'vue'
-  import { v4 as uuidv4 } from 'uuid';
-  import { collection, onSnapshot } from "firebase/firestore";
+  import { 
+            collection, onSnapshot, 
+            addDoc, deleteDoc, doc, updateDoc, 
+            query, orderBy 
+          } from "firebase/firestore";
   import { db } from '@/firebase'
+
+/*
+  Firebase refs
+*/
+  const todosCollectionRef = collection(db, "todos")
+  const todosCollectionQuery = query(todosCollectionRef, orderBy("date", "desc"))
 /*
   To Dos
 */
 
-  const todos = ref([
-    {
-      id: 'id1',
-      content: 'taks 1',
-      done: false
-    },
-    {
-      id: 'id2',
-      content: 'taks 2',
-      done: true
-    }
-  ])
+  const todos = ref([])
 
 /* 
     get Todos
 */
     onMounted(() => {
-      // const querySnapshot = await getDocs(collection(db, "todos"));
-      // let fbTodos = []
-      // querySnapshot.forEach((doc) => {
-      //   console.log(doc.id, " => ", doc.data());
-      //   const todo = {
-      //     id: doc.id,
-      //     content: doc.data().content,
-      //     done: doc.data().done
-      //   }
-      //   fbTodos.push(todo)  
-      // });
-      // todos.value = fbTodos 
-      onSnapshot(collection(db, "todos"), (querySnapshot) => {
+      onSnapshot(todosCollectionQuery, (querySnapshot) => {
           const fbTodos = [];
           querySnapshot.forEach((doc) => {
             const todo = {
@@ -125,19 +111,18 @@ class="card mb-5"
     const newTodoContent = ref('')
 
     const addTodo = () => {
-      const newTodo = {
-        id: uuidv4(),
+      addDoc(todosCollectionRef, {
         content: newTodoContent.value,
-        done: false
-      }
-      todos.value.unshift(newTodo)
+        done: false,
+        date: Date.now()
+      })
       newTodoContent.value = ''
     }
 /*
     delete Todo
 */
 const deleteTodo = id => {
-  todos.value = todos.value.filter(todo => todo.id !== id)
+  deleteDoc(doc(todosCollectionRef, id))
 }
 
 /* 
@@ -146,7 +131,9 @@ const deleteTodo = id => {
 
 const toggleDone = id => {
     const index = todos.value.findIndex(todo => todo.id === id)
-    todos.value[index].done = !todos.value[index].done
+    updateDoc(doc(todosCollectionRef, id), {
+    done: !todos.value[index].done
+})
   }
 
 </script>
